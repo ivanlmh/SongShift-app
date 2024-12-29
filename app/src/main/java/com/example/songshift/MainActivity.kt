@@ -28,16 +28,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-//        // debug logging
-//        Log.d("MainActivity", "App started")
-//        intent?.let {
-//            Log.d("MainActivity", "Initial intent: ${it.action}")
-//            Log.d("MainActivity", "Intent data: ${it.data}")
-//            Log.d("MainActivity", "Intent categories: ${it.categories}")
-//            Log.d("MainActivity", "Intent type: ${it.type}")
-//        }
-
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -52,11 +42,14 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val trackId = extractSpotifyId(spotifyUrl)
-            if (trackId != null) {
-                searchTrack(trackId)
-            } else {
-                binding.urlInputLayout.error = "Invalid Spotify URL format"
+            // Try to extract track or album ID
+            val trackId = extractSpotifyId(spotifyUrl, "track")
+            val albumId = extractSpotifyId(spotifyUrl, "album")
+
+            when {
+                trackId != null -> searchTrack(trackId)
+                albumId != null -> searchAlbum(albumId)
+                else -> binding.urlInputLayout.error = "Invalid Spotify URL format"
             }
         }
 
@@ -130,32 +123,43 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun handleIntent(intent: Intent?) {
-        Log.d("MainActivity", "Received intent: ${intent?.action}")
-        Log.d("MainActivity", "Intent data: ${intent?.data}")
-
         when (intent?.action) {
             Intent.ACTION_VIEW -> {
                 val uri = intent.data
-                Log.d("MainActivity", "URI host: ${uri?.host}, path: ${uri?.path}")
-
-                if (uri?.host?.contains("spotify") == true && uri.pathSegments.firstOrNull() == "track") {
-                    val trackId = uri.pathSegments.getOrNull(1)
-                    if (trackId != null) {
-                        binding.urlInput.setText(uri.toString())
-                        searchTrack(trackId)
+                if (uri?.host == "open.spotify.com") {
+                    when (uri.pathSegments.firstOrNull()) {
+                        "track" -> {
+                            val trackId = uri.pathSegments.getOrNull(1)
+                            if (trackId != null) {
+                                binding.urlInput.setText(uri.toString())
+                                searchTrack(trackId)
+                            }
+                        }
+                        "album" -> {
+                            val albumId = uri.pathSegments.getOrNull(1)
+                            if (albumId != null) {
+                                binding.urlInput.setText(uri.toString())
+                                searchAlbum(albumId)
+                            }
+                        }
                     }
                 }
             }
-
             Intent.ACTION_SEND -> {
-                // Handle shared content
                 if (intent.type == "text/plain") {
                     val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
                     if (sharedText != null) {
-                        val trackId = extractSpotifyId(sharedText)
-                        if (trackId != null) {
-                            binding.urlInput.setText(sharedText)
-                            searchTrack(trackId)
+                        val trackId = extractSpotifyId(sharedText, "track")
+                        val albumId = extractSpotifyId(sharedText, "album")
+                        when {
+                            trackId != null -> {
+                                binding.urlInput.setText(sharedText)
+                                searchTrack(trackId)
+                            }
+                            albumId != null -> {
+                                binding.urlInput.setText(sharedText)
+                                searchAlbum(albumId)
+                            }
                         }
                     }
                 }
@@ -163,15 +167,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun extractSpotifyId(url: String, type: String): String? {
+        val regex = "$type/(\\w+)".toRegex()
+        return regex.find(url)?.groupValues?.get(1)
+    }
+
     private fun updateUiState(isLoading: Boolean) {
         binding.loadingIndicator.visibility = if (isLoading) View.VISIBLE else View.GONE
         binding.convertButton.isEnabled = !isLoading
         binding.urlInput.isEnabled = !isLoading
-    }
-
-    private fun extractSpotifyId(url: String): String? {
-        val regex = "track/(\\w+)".toRegex()
-        return regex.find(url)?.groupValues?.get(1)
     }
 
 
@@ -249,6 +253,35 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 Log.e("MainActivity", "Error searching track", e)
+                showError(e)
+            } finally {
+                updateUiState(isLoading = false)
+            }
+        }
+    }
+
+    private fun searchAlbum(albumId: String) {
+        lifecycleScope.launch {
+            try {
+                updateUiState(isLoading = true)
+                binding.resultContainer.visibility = View.GONE
+
+                val accessToken = NetworkModule.getSpotifyAccessToken()
+                val spotifyAlbum = NetworkModule.spotifyApi.getAlbum(albumId, accessToken)
+
+                // Search for first track in album as sample
+                val searchQuery = "${spotifyAlbum.name} ${spotifyAlbum.artists.first().name}"
+                val deezerResults = NetworkModule.deezerApi.searchTrack(searchQuery)
+
+                if (deezerResults.data.isNotEmpty()) {
+                    showResult(deezerResults.data.first(),
+                        spotifyAlbum.name,
+                        spotifyAlbum.artists.first().name)
+                } else {
+                    showNoResultsFound()
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Error searching album", e)
                 showError(e)
             } finally {
                 updateUiState(isLoading = false)

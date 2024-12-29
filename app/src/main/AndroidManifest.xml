@@ -21,7 +21,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- URL handling -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -34,8 +33,9 @@
                 <!-- Match both domains -->
                 <data android:host="open.spotify.com" />
 
-                <!-- Match specific path only -->
+                <!-- Match both tracks and albums -->
                 <data android:pathPrefix="/track/" />
+                <data android:pathPrefix="/album/" />
             </intent-filter>
 
             <!-- Add a separate filter for spotify scheme -->
@@ -44,6 +44,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="spotify" android:host="track" />
+                <data android:scheme="spotify" android:host="album" />
             </intent-filter>
 
             <!-- Share handling -->
