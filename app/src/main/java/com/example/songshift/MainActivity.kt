@@ -7,7 +7,9 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.songshift.databinding.ActivityMainBinding
@@ -64,6 +66,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+
             Intent.ACTION_SEND -> {
                 // Handle shared content
                 if (intent.type == "text/plain") {
@@ -94,26 +97,56 @@ class MainActivity : AppCompatActivity() {
 
     private var currentDeezerLink: String? = null
 
-    private fun showResult(deezerTrack: DeezerTrack) {
+    private fun showResult(deezerTrack: DeezerTrack, trackName: String, artistName: String) {
         currentDeezerLink = deezerTrack.link
         binding.resultContainer.visibility = View.VISIBLE
-        binding.resultText.text = """
-            Found match on Deezer:
+
+        // Get YouTube Music and YouTube search URLs
+        val youtubeMusicUrl = NetworkModule.getYouTubeMusicSearchUrl(trackName, artistName)
+        val youtubeUrl = NetworkModule.getYouTubeSearchUrl(trackName, artistName)
+
+        // Show track info
+        binding.resultInfoText.text = """
+            Found match:
             Track: ${deezerTrack.title}
             Artist: ${deezerTrack.artist.name}
-            Link: ${deezerTrack.link}
+            
+            Links:
         """.trimIndent()
 
-        binding.copyLinkButton.setOnClickListener {
-            copyLinkToClipboard(deezerTrack.link)
+        // Set clickable links
+        binding.deezerLinkText.text = "Deezer: ${deezerTrack.link}"
+        binding.youtubeMusicLinkText.text = "YouTube Music: $youtubeMusicUrl"
+        binding.youtubeLinkText.text = "YouTube: $youtubeUrl"
+
+        // Set up copy buttons for each platform
+        binding.copyDeezerButton.setOnClickListener {
+            copyLinkToClipboard(deezerTrack.link, "Deezer")
         }
+
+        binding.copyYoutubeMusicButton.setOnClickListener {
+            copyLinkToClipboard(youtubeMusicUrl, "YouTube Music")
+        }
+
+        binding.copyYoutubeButton.setOnClickListener {
+            copyLinkToClipboard(youtubeUrl, "YouTube")
+        }
+
+        // Make links clickable with custom handling
+        setupClickableLink(binding.deezerLinkText, deezerTrack.link)
+        setupClickableLink(binding.youtubeMusicLinkText, youtubeMusicUrl)
+        setupClickableLink(binding.youtubeLinkText, youtubeUrl)
     }
 
-    private fun copyLinkToClipboard(link: String) {
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("Deezer Link", link)
-        clipboard.setPrimaryClip(clip)
-        Toast.makeText(this, "Link copied to clipboard", Toast.LENGTH_SHORT).show()
+    private fun setupClickableLink(textView: TextView, url: String) {
+        textView.setOnClickListener {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(this, "Unable to open link", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun searchTrack(trackId: String) {
@@ -130,23 +163,44 @@ class MainActivity : AppCompatActivity() {
 
                 if (deezerResults.data.isNotEmpty()) {
                     val deezerTrack = deezerResults.data.first()
-                    showResult(deezerTrack)
+                    showResult(deezerTrack, spotifyTrack.name, spotifyTrack.artists.first().name)
                 } else {
-                    binding.resultContainer.visibility = View.VISIBLE
-                    binding.resultText.text = "No matching track found on Deezer"
+                    showNoResultsFound()
                 }
             } catch (e: Exception) {
                 Log.e("MainActivity", "Error searching track", e)
-                binding.resultContainer.visibility = View.VISIBLE
-                binding.resultText.text = when (e) {
-                    is HttpException -> "API Error: ${e.code()}"
-                    is UnknownHostException -> "Network error. Check your internet connection."
-                    else -> "Error: ${e.localizedMessage}"
-                }
+                showError(e)
             } finally {
                 updateUiState(isLoading = false)
             }
         }
+    }
+
+    private fun showNoResultsFound() {
+        binding.resultContainer.visibility = View.VISIBLE
+        binding.resultInfoText.text = "No matching track found on Deezer"
+        binding.deezerLinkText.text = ""
+        binding.youtubeMusicLinkText.text = ""
+        binding.youtubeLinkText.text = ""
+    }
+
+    private fun showError(e: Exception) {
+        binding.resultContainer.visibility = View.VISIBLE
+        binding.resultInfoText.text = when (e) {
+            is HttpException -> "API Error: ${e.code()}"
+            is UnknownHostException -> "Network error. Check your internet connection."
+            else -> "Error: ${e.localizedMessage}"
+        }
+        binding.deezerLinkText.text = ""
+        binding.youtubeMusicLinkText.text = ""
+        binding.youtubeLinkText.text = ""
+    }
+
+    private fun copyLinkToClipboard(link: String, platform: String) {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("$platform Link", link)
+        clipboard.setPrimaryClip(clip)
+        Toast.makeText(this, "$platform link copied to clipboard", Toast.LENGTH_SHORT).show()
     }
 }
 
