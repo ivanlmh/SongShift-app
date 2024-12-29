@@ -22,14 +22,28 @@
             </intent-filter>
 
             <!-- URL handling -->
-            <intent-filter android:autoVerify="true" android:priority="999">
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- Match both http and https -->
                 <data android:scheme="http" />
                 <data android:scheme="https" />
+
+                <!-- Match both domains -->
                 <data android:host="open.spotify.com" />
+
+                <!-- Match specific path only -->
                 <data android:pathPrefix="/track/" />
+            </intent-filter>
+
+            <!-- Add a separate filter for spotify scheme -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="spotify" android:host="track" />
             </intent-filter>
 
             <!-- Share handling -->

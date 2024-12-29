@@ -3,6 +3,9 @@ package com.example.songshift
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.Menu
+import android.view.MenuItem
+import android.provider.Settings
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -10,6 +13,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.songshift.databinding.ActivityMainBinding
@@ -24,6 +28,16 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+//        // debug logging
+//        Log.d("MainActivity", "App started")
+//        intent?.let {
+//            Log.d("MainActivity", "Initial intent: ${it.action}")
+//            Log.d("MainActivity", "Intent data: ${it.data}")
+//            Log.d("MainActivity", "Intent categories: ${it.categories}")
+//            Log.d("MainActivity", "Intent type: ${it.type}")
+//        }
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -45,20 +59,86 @@ class MainActivity : AppCompatActivity() {
                 binding.urlInputLayout.error = "Invalid Spotify URL format"
             }
         }
+
+        if (isFirstRun()) {
+            showLinkHandlingHelp()
+        }
+    }
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
     }
 
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_app_settings -> {
+                openAppSettings()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun openAppSettings() {
+        try {
+            // Open links settings directly
+            val intent = Intent(Settings.ACTION_APPLICATION_SETTINGS).apply {
+                // Try to open directly to the app links section if possible
+                action = Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS
+                data = Uri.parse("package:$packageName")
+                addCategory(Intent.CATEGORY_DEFAULT)
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            // Fallback to regular app settings if the direct link fails
+            val fallbackIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.parse("package:$packageName")
+            }
+            startActivity(fallbackIntent)
+        }
+    }
+
+    // Also add this method to help users who have trouble with links
+    private fun showLinkHandlingHelp() {
+        AlertDialog.Builder(this)
+            .setTitle("Link Handling Setup")
+            .setMessage("To open Spotify links directly in this app:\n\n" +
+                    "1. Go to App Settings (menu icon → App Settings)\n" +
+                    "2. Find and tap 'Open by default' or 'Set as default'\n" +
+                    "3. Enable 'Open supported links'\n\n" +
+                    "If Spotify links still open in your browser, you may need to:\n" +
+                    "1. Clear defaults for your browser app\n" +
+                    "2. Or select 'Always ask' for Spotify links")
+            .setPositiveButton("Open Settings") { _, _ -> openAppSettings() }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
+
+//        // debug logging here too
+//        Log.d("MainActivity", "onNewIntent called")
+//        intent?.let {
+//            Log.d("MainActivity", "New intent: ${it.action}")
+//            Log.d("MainActivity", "Intent data: ${it.data}")
+//            Log.d("MainActivity", "Intent categories: ${it.categories}")
+//            Log.d("MainActivity", "Intent type: ${it.type}")
+//        }
+
         handleIntent(intent)
     }
 
 
     private fun handleIntent(intent: Intent?) {
+        Log.d("MainActivity", "Received intent: ${intent?.action}")
+        Log.d("MainActivity", "Intent data: ${intent?.data}")
+
         when (intent?.action) {
             Intent.ACTION_VIEW -> {
-                // Handle URLs (existing functionality)
                 val uri = intent.data
-                if (uri?.host == "open.spotify.com" && uri.pathSegments.firstOrNull() == "track") {
+                Log.d("MainActivity", "URI host: ${uri?.host}, path: ${uri?.path}")
+
+                if (uri?.host?.contains("spotify") == true && uri.pathSegments.firstOrNull() == "track") {
                     val trackId = uri.pathSegments.getOrNull(1)
                     if (trackId != null) {
                         binding.urlInput.setText(uri.toString())
@@ -202,5 +282,16 @@ class MainActivity : AppCompatActivity() {
         clipboard.setPrimaryClip(clip)
         Toast.makeText(this, "$platform link copied to clipboard", Toast.LENGTH_SHORT).show()
     }
+
+    // Add this method to your class:
+    private fun isFirstRun(): Boolean {
+        val prefs = getPreferences(Context.MODE_PRIVATE)
+        val isFirstRun = prefs.getBoolean("is_first_run", true)
+        if (isFirstRun) {
+            prefs.edit().putBoolean("is_first_run", false).apply()
+        }
+        return isFirstRun
+    }
+
 }
 
