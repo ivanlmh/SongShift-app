@@ -25,7 +25,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="Find on Deezer"
+        android:text="Find elsewhere"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/urlInputLayout" />
@@ -93,6 +93,7 @@
 
             <Button
                 android:id="@+id/copyDeezerButton"
+                style="@style/DeezerButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Copy Deezer Link"
@@ -100,6 +101,7 @@
 
             <Button
                 android:id="@+id/copyYoutubeMusicButton"
+                style="@style/YoutubeButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Copy YouTube Music Link"
@@ -107,6 +109,7 @@
 
             <Button
                 android:id="@+id/copyYoutubeButton"
+                style="@style/YoutubeButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Copy YouTube Link" />
