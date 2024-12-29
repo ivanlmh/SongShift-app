@@ -1,6 +1,7 @@
-# SongShift
-
-![App Icon](app/src/main/ic_launcher-playstore.png)
+<div align="center">
+  <img src="app/src/main/res/mipmap-hdpi/ic_launcher_foreground.webp" alt="App Icon" width="150" height="150" style="border-radius: 15px;">
+  <h1>SongShift</h1>
+</div>
 
 SongShift is an Android app that makes it easy to share and discover music. It converts Spotify track or album URLs into links for Deezer, YouTube Music, and YouTube.
 
