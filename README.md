@@ -24,8 +24,22 @@ SongShift is an Android app that makes it easy to share and discover music. It c
 
 ### Installation
 
-TODO
+Download the latest APK from [app\/release\/app-release.apk](app\/release\/app-release.apk) and install it on your Android device.
 
-## Getting Started
+### Getting Started
 
-TODO
+There are several ways to use SongShift:
+
+1. **Direct Link Opening**
+When you click a Spotify link (if Spotify app isn't installed) SongShift should open. If not, you can configure SongShift to open Spotify links by default through the app's Settings (⋮) menu.
+
+2. **Manual Entry**
+    - Open the app
+    - Paste a Spotify URL in the input field
+    - Tap "FIND ELSEWHERE"
+
+<div align="center">
+  <img src="screenshots\/screen1.png" alt="Home Screen" width="250">
+  <img src="screenshots\/screen2.png" alt="Results Screen" width="250">
+<\/div>
+
