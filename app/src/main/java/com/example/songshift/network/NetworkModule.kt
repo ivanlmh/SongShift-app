@@ -13,6 +13,7 @@ object NetworkModule {
 
     private const val SPOTIFY_CLIENT_ID = ""
     private const val SPOTIFY_CLIENT_SECRET = ""
+    private const val YOUTUBE_API_KEY = ""
 
     private val spotifyAuthApi = Retrofit.Builder()
         .baseUrl(SPOTIFY_AUTH_URL)

@@ -39,7 +39,7 @@ When you click a Spotify link (if Spotify app isn't installed) SongShift should 
     - Tap "FIND ELSEWHERE"
 
 <div align="center">
-  <img src="screenshots\/screen1.png" alt="Home Screen" width="250">
-  <img src="screenshots\/screen2.png" alt="Results Screen" width="250">
-<\/div>
+  <img src="./screen1.jpg" alt="Home Screen" width="250">
+  <img src="./screen2.jpg" alt="Results Screen" width="250">
+</div>
 
